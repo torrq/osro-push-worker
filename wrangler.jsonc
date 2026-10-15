@@ -1,12 +1,21 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "osro-push-worker",
-  "main": "src/index.js",
-  "compatibility_date": "2026-05-22",
-  "compatibility_flags": ["nodejs_compat"],
-  "vars": {
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "osro-push-worker",
+	"main": "src/index.js",
+	"compatibility_date": "2026-05-22",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"vars": {
 		"VAPID_SUBJECT": "mailto:nhewitt@gmail.com",
 		"QSTASH_URL": "https://qstash-us-east-1.upstash.io/v2/publish/",
 		"QSTASH_MESSAGES_URL": "https://qstash-us-east-1.upstash.io/v2/messages/"
-	}
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "osro-sync",
+			"database_id": "05081557-a4e7-4d17-a2b4-1c0adea3aaff"
+		}
+	]
 }
