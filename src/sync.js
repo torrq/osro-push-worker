@@ -165,10 +165,10 @@ export async function handleLinkGoogle(request, env, accountId, corsHeaders) {
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
-export async function handleGetSync(request, env, accountId, corsHeaders) {
+export async function handleGetSync(request, env, accountId, corsHeaders, appOverride = null) {
   try {
     const url = new URL(request.url);
-    const app = url.searchParams.get('app') || 'hr';
+    const app = appOverride || url.searchParams.get('app') || 'hr';
     const db = env.DB;
     if (!db) return jsonResponse({ error: 'D1 database binding missing' }, 500, corsHeaders);
 
@@ -227,7 +227,7 @@ export async function handlePutSync(request, env, accountId, corsHeaders) {
 
     const entries = Object.entries(changes);
     if (entries.length === 0) {
-      return handleGetSync(request, env, accountId, corsHeaders);
+      return handleGetSync(request, env, accountId, corsHeaders, app);
     }
 
     // Fetch existing keys and timestamps for this account & app in a single query
@@ -277,7 +277,7 @@ export async function handlePutSync(request, env, accountId, corsHeaders) {
     }
 
     // Return the full merged state for this app
-    return handleGetSync(request, env, accountId, corsHeaders);
+    return handleGetSync(request, env, accountId, corsHeaders, app);
   } catch (err) {
     console.error('[Put Sync Error]', err);
     return jsonResponse({ error: err.message || 'Failed to update sync state' }, 500, corsHeaders);
@@ -286,14 +286,30 @@ export async function handlePutSync(request, env, accountId, corsHeaders) {
 
 export async function handleDeleteSync(request, env, accountId, corsHeaders) {
   try {
+    const url = new URL(request.url);
+    const app = url.searchParams.get('app');
     const db = env.DB;
     if (!db) return jsonResponse({ error: 'D1 database binding missing' }, 500, corsHeaders);
 
-    await db.batch([
-      db.prepare('DELETE FROM kv WHERE account_id = ?').bind(accountId),
-      db.prepare('DELETE FROM devices WHERE account_id = ?').bind(accountId),
-      db.prepare('DELETE FROM accounts WHERE id = ?').bind(accountId),
-    ]);
+    if (app) {
+      await db.prepare('DELETE FROM kv WHERE account_id = ? AND app = ?').bind(accountId, app).run();
+      const remaining = await db
+        .prepare('SELECT 1 FROM kv WHERE account_id = ? LIMIT 1')
+        .bind(accountId)
+        .first();
+      if (!remaining) {
+        await db.batch([
+          db.prepare('DELETE FROM devices WHERE account_id = ?').bind(accountId),
+          db.prepare('DELETE FROM accounts WHERE id = ?').bind(accountId),
+        ]);
+      }
+    } else {
+      await db.batch([
+        db.prepare('DELETE FROM kv WHERE account_id = ?').bind(accountId),
+        db.prepare('DELETE FROM devices WHERE account_id = ?').bind(accountId),
+        db.prepare('DELETE FROM accounts WHERE id = ?').bind(accountId),
+      ]);
+    }
 
     return jsonResponse({ success: true }, 200, corsHeaders);
   } catch (err) {
