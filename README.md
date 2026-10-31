@@ -1,3 +1,5 @@
+<img width="1500" height="306" alt="osro-push-worker" src="https://github.com/user-attachments/assets/c2d3db86-0d55-4601-85ff-d2267243ebe3" />
+
 # osro-push-worker
 
 Cloudflare Worker backend for [**OSRO Quests (Highrate)**](https://github.com/torrq/osro-quests-hr) and [**OSRO Quests (Midrate)**](https://github.com/torrq/osro-quests-mr).
